@@ -36,7 +36,7 @@ def auction(request):
     
     # Calculate minimum bid (5% of total points)
     total_points = teams.first().total_points
-    min_bid = round(total_points * 0.05)
+    min_bid = round(total_points * 0.01)
     
     # Process POST requests
     if request.method == 'POST':
