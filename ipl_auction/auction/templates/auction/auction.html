@@ -23,28 +23,66 @@
         </div>
     </div>
     
-    <form method="post" class="mb-4">
-        {% csrf_token %}
-        
-        <div class="form-group mb-3">
-            <label for="bid_amount">Bid Amount:</label>
-            <input type="number" class="form-control" id="bid_amount" name="bid_amount" min="{{ min_bid }}" value="{{ min_bid }}">
-            <small class="form-text text-muted">Minimum increment: max(1% of total points, 5% of current bid)</small>
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h3>Bidding</h3>
         </div>
-        
-        <div class="form-group mb-3">
-            <label for="winning_team">Winning Team:</label>
-            <select class="form-control" id="winning_team" name="winning_team">
-                <option value="">-- Select Team --</option>
-                {% for team in teams %}
-                    <option value="{{ team.id }}">{{ team.name }} ({{ team.remaining_points }} points)</option>
-                {% endfor %}
-            </select>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="alert alert-success" id="current-bid-display">
+                        Current Bid: <span id="current-bid-amount">{{ min_bid }}</span> by 
+                        <span id="current-bidder-name">No bids yet</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="bid-increment">Bid Increment:</label>
+                        <select class="form-control" id="bid-increment">
+                            <option value="{{ min_bid|floatformat:0 }}">Minimum ({{ min_bid }} points)</option>
+                            <option value="10">10 points</option>
+                            <option value="20">20 points</option>
+                            <option value="50">50 points</option>
+                            <option value="100">100 points</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-12">
+                    <h5>Quick Bid Buttons:</h5>
+                    <div class="d-flex flex-wrap">
+                        {% for team in teams %}
+                            <button 
+                                type="button" 
+                                class="btn btn-outline-primary m-1 bid-button" 
+                                data-team-id="{{ team.id }}" 
+                                data-team-name="{{ team.name }}"
+                                data-remaining="{{ team.remaining_points }}"
+                            >
+                                {{ team.name }} ({{ team.remaining_points }} pts)
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <form method="post" id="auction-form">
+                {% csrf_token %}
+                <input type="hidden" name="player_id" value="{{ current_player.id }}">
+                <input type="hidden" name="current_bid" id="current-bid-field" value="{{ min_bid }}">
+                <input type="hidden" name="current_bidder" id="current-bidder-field" value="">
+                <input type="hidden" name="action" id="action-field" value="">
+                
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-success" onclick="setAction('finish')">Finish Auction</button>
+                    <button type="submit" class="btn btn-warning" onclick="setAction('unsold')">Mark Unsold</button>
+                    <a href="{% url 'auction' %}" class="btn btn-secondary">Skip Player</a>
+                </div>
+            </form>
         </div>
-        
-        <button type="submit" class="btn btn-success">Confirm Bid</button>
-        <a href="{% url 'auction' %}" class="btn btn-secondary">Skip Player</a>
-    </form>
+    </div>
     
     <h3 class="mb-3">Team Status</h3>
     <div class="row">
@@ -74,4 +112,60 @@
         {% endfor %}
     </div>
 </div>
-{% endblock %} 
+
+<script>
+    // Bidding functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const bidButtons = document.querySelectorAll('.bid-button');
+        const currentBidField = document.getElementById('current-bid-field');
+        const currentBidAmount = document.getElementById('current-bid-amount');
+        const currentBidderField = document.getElementById('current-bidder-field');
+        const currentBidderName = document.getElementById('current-bidder-name');
+        const bidIncrement = document.getElementById('bid-increment');
+        
+        let currentBid = {{ min_bid }};
+        let currentBidder = null;
+        
+        bidButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const teamId = this.getAttribute('data-team-id');
+                const teamName = this.getAttribute('data-team-name');
+                const teamRemaining = parseInt(this.getAttribute('data-remaining'));
+                const increment = parseInt(bidIncrement.value);
+                
+                const newBid = currentBid + increment;
+                
+                // Check if team has enough points
+                if (teamRemaining < newBid) {
+                    alert(`${teamName} doesn't have enough points for this bid!`);
+                    return;
+                }
+                
+                // Update current bid
+                currentBid = newBid;
+                currentBidder = teamId;
+                
+                // Update display
+                currentBidAmount.textContent = currentBid;
+                currentBidderName.textContent = teamName;
+                
+                // Update form fields
+                currentBidField.value = currentBid;
+                currentBidderField.value = currentBidder;
+                
+                // Highlight the current bidder
+                bidButtons.forEach(btn => {
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-outline-primary');
+                });
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-primary');
+            });
+        });
+    });
+    
+    function setAction(action) {
+        document.getElementById('action-field').value = action;
+    }
+</script>
+{% endblock %}
