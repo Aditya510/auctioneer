@@ -1,0 +1,40 @@
+{% extends 'auction/base.html' %}
+{% load auction_filters %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Auction Results</h1>
+    
+    <div class="row">
+        {% for team in teams %}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h4>{{ team.name }}</h4>
+                        <p class="mb-0">Remaining Points: {{ team.remaining_points }} / {{ team.total_points }}</p>
+                    </div>
+                    <div class="card-body">
+                        <h5>Acquired Players:</h5>
+                        {% if team_players|get:team %}
+                            <ul class="list-group">
+                                {% for player, amount in team_players|get:team %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ player.name }} ({{ player.team }})
+                                        <span class="badge bg-primary rounded-pill">{{ amount }} points</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>No players acquired</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="{% url 'setup' %}" class="btn btn-primary">Start New Auction</a>
+    </div>
+</div>
+{% endblock %} 

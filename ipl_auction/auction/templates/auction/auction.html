@@ -1,0 +1,77 @@
+{% extends 'auction/base.html' %}
+{% load auction_filters %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">IPL Auction</h1>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3>Current Player</h3>
+        </div>
+        <div class="card-body">
+            <h2>{{ current_player.name }}</h2>
+            <p class="lead">Original Team: {{ current_player.team }}</p>
+            <p>Minimum Bid: {{ min_bid }} points</p>
+            <p class="text-muted">Remaining Players: {{ remaining_count }}</p>
+        </div>
+    </div>
+    
+    <form method="post" class="mb-4">
+        {% csrf_token %}
+        
+        <div class="form-group mb-3">
+            <label for="bid_amount">Bid Amount:</label>
+            <input type="number" class="form-control" id="bid_amount" name="bid_amount" min="{{ min_bid }}" value="{{ min_bid }}">
+            <small class="form-text text-muted">Minimum increment: max(1% of total points, 5% of current bid)</small>
+        </div>
+        
+        <div class="form-group mb-3">
+            <label for="winning_team">Winning Team:</label>
+            <select class="form-control" id="winning_team" name="winning_team">
+                <option value="">-- Select Team --</option>
+                {% for team in teams %}
+                    <option value="{{ team.id }}">{{ team.name }} ({{ team.remaining_points }} points)</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-success">Confirm Bid</button>
+        <a href="{% url 'auction' %}" class="btn btn-secondary">Skip Player</a>
+    </form>
+    
+    <h3 class="mb-3">Team Status</h3>
+    <div class="row">
+        {% for team in teams %}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h4>{{ team.name }} - {{ team.remaining_points }} points</h4>
+                    </div>
+                    <div class="card-body">
+                        <h5>Acquired Players:</h5>
+                        {% if team_players|get:team %}
+                            <ul class="list-group">
+                                {% for player, amount in team_players|get:team %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ player.name }} ({{ player.team }})
+                                        <span class="badge bg-primary rounded-pill">{{ amount }} points</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>No players yet</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 
