@@ -39,11 +39,10 @@
                     <div class="form-group">
                         <label for="bid-increment">Bid Increment:</label>
                         <select class="form-control" id="bid-increment">
-                            <option value="{{ min_bid|floatformat:0 }}">Minimum ({{ min_bid }} points)</option>
-                            <option value="10">10 points</option>
-                            <option value="20">20 points</option>
-                            <option value="50">50 points</option>
+                            <option value="50" selected>50 points</option>
                             <option value="100">100 points</option>
+                            <option value="200">200 points</option>
+                            <option value="500">500 points</option>
                         </select>
                     </div>
                 </div>
@@ -121,18 +120,20 @@
         const currentBidAmount = document.getElementById('current-bid-amount');
         const currentBidderField = document.getElementById('current-bidder-field');
         const currentBidderName = document.getElementById('current-bidder-name');
-        const bidIncrement = document.getElementById('bid-increment');
+        const bidIncrementDropdown = document.getElementById('bid-increment');
         
         let currentBid = {{ min_bid }};
         let currentBidder = null;
+        let firstBid = true;
         
         bidButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const teamId = this.getAttribute('data-team-id');
                 const teamName = this.getAttribute('data-team-name');
                 const teamRemaining = parseInt(this.getAttribute('data-remaining'));
-                const increment = parseInt(bidIncrement.value);
                 
+                // Calculate new bid based on selected increment
+                const increment = parseInt(bidIncrementDropdown.value);
                 const newBid = currentBid + increment;
                 
                 // Check if team has enough points
@@ -160,6 +161,18 @@
                 });
                 this.classList.remove('btn-outline-primary');
                 this.classList.add('btn-primary');
+                
+                // Calculate suggested increment (7% of current bid, rounded to nearest 5)
+                const suggestedIncrement = Math.round((currentBid * 0.07) / 5) * 5;
+                
+                // Update increment dropdown with suggested and fixed increments
+                bidIncrementDropdown.innerHTML = `
+                    <option value="${suggestedIncrement}" selected>Suggested: ${suggestedIncrement} points </option>
+                    <option value="50">50 points</option>
+                    <option value="100">100 points</option>
+                    <option value="200">200 points</option>
+                    <option value="500">500 points</option>
+                `;
             });
         });
     });
